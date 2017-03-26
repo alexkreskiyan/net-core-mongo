@@ -1,0 +1,6 @@
+# editors
+.vscode/
+*.swp
+# artifacts
+bin/
+obj/

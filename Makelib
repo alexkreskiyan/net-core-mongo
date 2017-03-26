@@ -1,0 +1,59 @@
+MAKEFLAGS=--warn-undefined-variables
+
+REPO = https://www.myget.org/F/annium/api/v3/index.json
+APIKEY = 1903733a-b4f6-494a-9347-1347408b157e
+REPO_LOCAL ?= ~/.nuget/packages-local
+
+CONFIG ?= Debug
+HTTP_CACHE ?= ~/.local/share/NuGet/v3-cache
+PACKAGES_CACHE ?= ~/.nuget/packages
+
+
+define pack
+	(dotnet pack ./src/$(1)/$(1).csproj --no-build --include-symbols --include-source --configuration $(CONFIG))
+endef
+
+define push-local
+	@$(eval PACKAGES := $(shell find ./src/$(1)/bin/$(CONFIG) -type f -name "*.symbols.nupkg"))
+	(nuget push $(PACKAGES) -source $(REPO_LOCAL))
+endef
+
+define push-server
+	@$(eval PACKAGES := $(shell find ./src/$(1)/bin/$(CONFIG) -type f -name "*.symbols.nupkg"))
+	(nuget push $(PACKAGES) $(APIKEY) -source $(REPO))
+endef
+
+define clear-cache
+	@find $(HTTP_CACHE) -type f -name "*$(1)*" | xargs rm
+	@$(eval LOWER_PACKAGE = $(shell echo $(1) | tr A-Z a-z))
+	@find $(PACKAGES_CACHE) -type d -name "$(LOWER_PACKAGE)" | xargs rm -rf
+endef
+
+define clear-local
+	$(call clear-cache,$(1))
+	@(find $(REPO_LOCAL) -type f -name "$(1)*" | xargs rm)
+endef
+
+define clear-server
+	$(call clear-cache,$(1))
+	@$(eval VERSIONS := $(shell (nuget list -Source $(REPO) -AllVersions | grep -F $(1)) | cut -d ' ' -f 2))
+	@$(foreach version,$(VERSIONS),$(shell (nuget delete $(1) $(version) $(APIKEY) -Source $(REPO) -NonInteractive)))
+endef
+
+
+clean:
+	@find . -type d -name "bin" | xargs rm -rf
+	@find . -type d -name "obj" | xargs rm -rf
+	@find . -type f -name "*.nupkg" | xargs rm
+	@echo "Done"
+
+restore:
+	@dotnet restore ./$(PACKAGE).sln
+	@echo "Done"
+
+build:
+	@dotnet build ./$(PACKAGE).sln --configuration $(CONFIG)
+	@echo "Done"
+
+rebuild: clean restore
+	$(MAKE) build CONFIG=$(CONFIG)
