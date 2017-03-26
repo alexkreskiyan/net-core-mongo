@@ -4,6 +4,7 @@ PACKAGE = MongoSample
 
 run:
 	@dotnet exec ./src/$(PACKAGE)/bin/$(CONFIG)/netcoreapp1.1/$(PACKAGE).dll
+
 pack:
 	@$(MAKE) rebuild CONFIG=$(CONFIG)
 	@$(call pack,$(PACKAGE))
