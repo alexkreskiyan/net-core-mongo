@@ -16,8 +16,9 @@ namespace MongoSample
         private static async Task Run()
         {
             var commander = Configurator.ConfigureCommander(provider.GetRequiredService<Commander>());
-            while (true)
-                await commander.Run(Console.ReadLine()).ConfigureAwait(false);
+            await commander.Run("find").ConfigureAwait(false);
+            // while (true)
+            //     await commander.Run(Console.ReadLine()).ConfigureAwait(false);
         }
     }
 }
